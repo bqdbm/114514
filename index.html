@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub仓库文件浏览器</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            color: #e6e6e6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 30px 0;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #4cc9f0, #4361ee);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            margin-bottom: 20px;
+        }
+        
+        .repo-info {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 15px;
+        }
+        
+        .info-card {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 15px 25px;
+            border-radius: 12px;
+            text-align: center;
+            min-width: 150px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .info-card h3 {
+            font-size: 1.8rem;
+            margin-bottom: 5px;
+            color: #4cc9f0;
+        }
+        
+        .info-card p {
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .search-box {
+            flex-grow: 1;
+            position: relative;
+            max-width: 500px;
+        }
+        
+        .search-box input {
+            width: 100%;
+            padding: 15px 20px 15px 50px;
+            border-radius: 50px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .search-box i {
+            position: absolute;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #4361ee;
+        }
+        
+        .filter-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .filter-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: #e6e6e6;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .filter-btn:hover, .filter-btn.active {
+            background: linear-gradient(90deg, #4361ee, #4cc9f0);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.4);
+        }
+        
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .file-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+        }
+        
+        .file-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(67, 97, 238, 0.3);
+        }
+        
+        .file-header {
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .file-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #4361ee, #3a0ca3);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+        }
+        
+        .file-icon i {
+            font-size: 24px;
+            color: white;
+        }
+        
+        .file-info {
+            flex-grow: 1;
+        }
+        
+        .file-name {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+        
+        .file-meta {
+            font-size: 0.85rem;
+            opacity: 0.7;
+        }
+        
+        .file-preview {
+            padding: 20px;
+            height: 150px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+        
+        .file-preview pre {
+            white-space: pre-wrap;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            max-height: 120px;
+            overflow: hidden;
+            color: #b3c7ff;
+        }
+        
+        .file-actions {
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-view {
+            background: rgba(67, 97, 238, 0.2);
+            color: #4cc9f0;
+            border: none;
+        }
+        
+        .btn-download {
+            background: rgba(76, 201, 240, 0.2);
+            color: #4361ee;
+            border: none;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            margin-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 0.9rem;
+            opacity: 0.7;
+        }
+        
+        .github-link {
+            color: #4cc9f0;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+            }
+            
+            .search-box {
+                width: 100%;
+                max-width: 100%;
+            }
+            
+            .file-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100%, 1fr));
+            }
+            
+            .repo-info {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fab fa-github"></i> GitHub 文件浏览器</h1>
+            <p class="subtitle">浏览仓库 bqdbm/114514 中的 /gongx 目录</p>
+            
+            <div class="repo-info">
+                <div class="info-card">
+                    <h3>24</h3>
+                    <p>文件总数</p>
+                </div>
+                <div class="info-card">
+                    <h3>1.7MB</h3>
+                    <p>仓库大小</p>
+                </div>
+                <div class="info-card">
+                    <h3>8</h3>
+                    <p>贡献者</p>
+                </div>
+                <div class="info-card">
+                    <h3>1.4k</h3>
+                    <p>星标</p>
+                </div>
+            </div>
+        </header>
+        
+        <div class="controls">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="searchInput" placeholder="搜索文件...">
+            </div>
+            
+            <div class="filter-buttons">
+                <button class="filter-btn active">全部文件</button>
+                <button class="filter-btn">文本文件</button>
+                <button class="filter-btn">图片</button>
+                <button class="filter-btn">文档</button>
+            </div>
+        </div>
+        
+        <div class="file-grid" id="fileGrid">
+            <!-- 文件卡片将通过JavaScript动态生成 -->
+        </div>
+        
+        <footer>
+            <p>GitHub仓库文件浏览器 &copy; 2023 | 展示仓库: bqdbm/114514</p>
+            <a href="https://github.com/bqdbm/114514/tree/main/gongx" class="github-link" target="_blank">
+                <i class="fab fa-github"></i> 访问原始仓库
+            </a>
+        </footer>
+    </div>
+
+    <script>
+        // 模拟文件数据
+        const files = [
+            { 
+                name: "gongx1.txt", 
+                type: "text", 
+                size: "45KB", 
+                lastModified: "2023-07-15", 
+                preview: "这是一个示例文本文件内容，用于展示文件预览功能。\n文件来自GitHub仓库：bqdbm/114514/gongx目录。\n\n你可以在这里展示文件的部分内容，让用户了解文件内容。\n\n这个文件包含一些示例文本，用于演示目的。"
+            },
+            { 
+                name: "gongx_image.jpg", 
+                type: "image", 
+                size: "120KB", 
+                lastModified: "2023-07-10", 
+                preview: "图像文件预览：gongx_image.jpg\n\n由于这是一个图像文件，我们无法在预览中显示实际图像内容。在实际应用中，您可以显示缩略图或图像描述。"
+            },
+            { 
+                name: "documentation.md", 
+                type: "document", 
+                size: "28KB", 
+                lastModified: "2023-07-18", 
+                preview: "# 项目文档\n\n## 介绍\n这是一个Markdown格式的文档文件，用于项目文档说明。\n\n## 功能\n- 功能1: 描述功能1\n- 功能2: 描述功能2\n- 功能3: 描述功能3\n\n## 使用说明\n使用这个文件来记录项目的重要信息。"
+            },
+            { 
+                name: "data.json", 
+                type: "text", 
+                size: "33KB", 
+                lastModified: "2023-07-12", 
+                preview: "{\n  \"project\": \"gongx\",\n  \"version\": \"1.0.0\",\n  \"description\": \"示例JSON数据文件\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"name\": \"项目A\"\n    },\n    {\n      \"id\": 2,\n      \"name\": \"项目B\"\n    }\n  ]\n}"
+            },
+            { 
+                name: "config.yml", 
+                type: "text", 
+                size: "15KB", 
+                lastModified: "2023-07-05", 
+                preview: "# 应用配置\n\ndatabase:\n  host: localhost\n  port: 3306\n  username: admin\n  password: secure_password\n\nserver:\n  port: 8080\n  environment: production"
+            },
+            { 
+                name: "archive.zip", 
+                type: "archive", 
+                size: "450KB", 
+                lastModified: "2023-07-20", 
+                preview: "压缩文件: archive.zip\n\n这是一个ZIP压缩文件，包含多个文档和资源。\n\n内容列表:\n- document1.txt\n- image1.png\n- data.json"
+            }
+        ];
+        
+        // 文件类型图标映射
+        const fileIcons = {
+            text: "fa-file-alt",
+            image: "fa-file-image",
+            document: "fa-file-word",
+            archive: "fa-file-archive",
+            default: "fa-file"
+        };
+        
+        // 渲染文件卡片
+        function renderFileCards(filesToRender) {
+            const fileGrid = document.getElementById('fileGrid');
+            fileGrid.innerHTML = '';
+            
+            filesToRender.forEach(file => {
+                const iconClass = fileIcons[file.type] || fileIcons.default;
+                
+                const card = document.createElement('div');
+                card.className = 'file-card';
+                card.innerHTML = `
+                    <div class="file-header">
+                        <div class="file-icon">
+                            <i class="fas ${iconClass}"></i>
+                        </div>
+                        <div class="file-info">
+                            <div class="file-name">${file.name}</div>
+                            <div class="file-meta">${file.size} • ${file.lastModified}</div>
+                        </div>
+                    </div>
+                    <div class="file-preview">
+                        <pre>${file.preview}</pre>
+                    </div>
+                    <div class="file-actions">
+                        <button class="btn btn-view">
+                            <i class="fas fa-eye"></i> 查看
+                        </button>
+                        <button class="btn btn-download">
+                            <i class="fas fa-download"></i> 下载
+                        </button>
+                    </div>
+                `;
+                fileGrid.appendChild(card);
+            });
+        }
+        
+        // 初始化渲染
+        renderFileCards(files);
+        
+        // 搜索功能
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', () => {
+            const searchTerm = searchInput.value.toLowerCase();
+            const filteredFiles = files.filter(file => 
+                file.name.toLowerCase().includes(searchTerm) || 
+                file.preview.toLowerCase().includes(searchTerm)
+            );
+            renderFileCards(filteredFiles);
+        });
+        
+        // 过滤按钮功能
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        filterButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                filterButtons.forEach(btn => btn.classList.移除('active'));
+                button.classList.添加('active');
+                
+                const filterType = button.textContent;
+                let filteredFiles = files;
+                
+                if (filterType === '文本文件') {
+                    filteredFiles = files.filter(file => file.请键入 === 'text');
+                } else if (filterType === '图片') {
+                    filteredFiles = files.filter(file => file.请键入 === 'image');
+                } else if (filterType === '文档') {
+                    filteredFiles = files.filter(file => file.请键入 === 'document');
+                }
+                
+                renderFileCards(filteredFiles);
+            });
+        });
+    </script>
+</内容>
+</html>
